@@ -2,10 +2,10 @@
   "name": "parcel-project-template",
   "version": "2.0.0",
   "description": "",
-  "homepage": "https://Veronikanos.github.io/FilmotekaTeamProject",
+  "homepage": "https://ahamoth.github.io/Film",
   "scripts": {
     "start": "parcel src/*.html",
-    "build": "parcel build src/*.html --public-url /FilmotekaTeamProject/"
+    "build": "parcel build src/*.html --public-url /Film/"
   },
   "repository": {
     "type": "git",
