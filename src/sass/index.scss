@@ -1,2 +1,17 @@
-@import './common';
-@import './example';
+@import './utils/mixins';
+@import './utils/variables';
+@import './utils/scroll';
+@import './utils/cursor';
+
+@import './base/common';
+@import './base/container';
+@import './base/buttons';
+
+@import './layout/header';
+@import './layout/main-section.scss';
+@import './layout/library';
+@import './layout/modal';
+@import './layout/trailer';
+@import './layout/footer';
+@import './layout/spinner';
+@import './layout/page-numbers';
