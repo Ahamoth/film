@@ -2,10 +2,10 @@
   "name": "parcel-project-template",
   "version": "2.0.0",
   "description": "",
-  "homepage": "https://ahamoth.github.io/Film",
+  "homepage": "https://ahamoth.github.io/film",
   "scripts": {
     "start": "parcel src/*.html",
-    "build": "parcel build src/*.html --public-url /Film/"
+    "build": "parcel build src/*.html --public-url /film/"
   },
   "repository": {
     "type": "git",
