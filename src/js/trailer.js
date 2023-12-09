@@ -26,7 +26,7 @@ export async function watchTrailer(e) {
      renderTrailer(trailers);
   }
 function renderTrailer(results) {trailerDiv.innerHTML = `
-<iframe src="https://kinovibe.tv/embed/kinopoisk/1207237/"  width="840" height="560" frameborder="0" allowfullscreen></iframe>`;
+<iframe src="https://2221407734375553.svetacdn.in/h9Ggt3pCGbiS?imdb_id=${results}"  width="840" height="560" frameborder="0" allowfullscreen></iframe>`;
 
 }
 
