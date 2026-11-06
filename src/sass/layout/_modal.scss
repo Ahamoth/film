@@ -5,6 +5,7 @@
   padding: 48px 20px 40px 20px;
   width: 285px;
   max-height: calc(100% - 40px);
+  overflow-y: auto;
 
   background-color: $white-color;
 
@@ -177,7 +178,7 @@
   display: grid;
   place-items: center;
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
   background-color: rgba(0, 0, 0, 0.329);
   z-index: 5;
   position: fixed;
