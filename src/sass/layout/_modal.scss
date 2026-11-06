@@ -196,11 +196,11 @@
     max-height: 100dvh;
     margin: 0;
     border-radius: 0;
-    padding-top: unquote("max(16px, env(safe-area-inset-top))");
-    padding-right: unquote("max(20px, env(safe-area-inset-right))");
-    padding-bottom: unquote("max(16px, env(safe-area-inset-bottom))");
-    padding-left: unquote("max(20px, env(safe-area-inset-left))");
-    box-sizing: border-box;
+    padding-top: m#{a}x(16px, env(safe-area-inset-top));
+padding-right: m#{a}x(20px, env(safe-area-inset-right));
+padding-bottom: m#{a}x(16px, env(safe-area-inset-bottom));
+padding-left: m#{a}x(20px, env(safe-area-inset-left));
+box-sizing: border-box;
   }
 }
 
