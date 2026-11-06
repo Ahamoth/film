@@ -26,7 +26,7 @@ export async function watchTrailer(e) {
      renderTrailer(trailers);
   }
 function renderTrailer(results) {trailerDiv.innerHTML = `
-<iframe src="https://2221407734375553.svetacdn.in/h9Ggt3pCGbiS?imdb_id=${results}"  width="840" height="560" frameborder="0" allowfullscreen></iframe>`;
+<iframe src="https://franko.uacdn.online/show/imdb/${results}"  width="840" height="560" frameborder="0" allowfullscreen></iframe>`;
 
 }
 
