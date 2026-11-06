@@ -206,10 +206,6 @@
   /* Если внутри .modal есть контейнер с горизонтальным padding — 
      оставьте его, но убедитесь, что он не создаёт полей снаружи */
   .modal__content {
-    padding-left: 16px;
-    padding-right: 16px;
-    // padding-top с учётом "челки" на iPhone
-    padding-top: max(16px, env(safe-area-inset-top));
-    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    padding: 16px; // или padding-left/right: 16px; padding-top/bottom: 16px;
   }
 }
