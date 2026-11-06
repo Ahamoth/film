@@ -29,7 +29,7 @@ export function createPagination(fetchType) {
 
   const pagination = new Pagination(paginationContainer, options);
   pagination.on('afterMove', async function (eventData) {
-    body.scrollTop = body.scrollHeight;
+    window.scrollTo(0, 0);
     const { page } = eventData;
     moviesApiService.page = page;
     const firstArrow = document.querySelector('.main-section__arrows--first');
