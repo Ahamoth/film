@@ -354,3 +354,32 @@
     height: 40px !important;
   }
 }
+// =====================================================
+//  🔹 Нативный fullscreen — растягиваем на весь экран
+// =====================================================
+#trailerOverflow:fullscreen,
+#trailerOverflow:-webkit-full-screen,
+#trailerOverflow:-ms-fullscreen {
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  background: #000 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+#trailerOverflow:fullscreen #trailerModal,
+#trailerOverflow:-webkit-full-screen #trailerModal {
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+
+#trailerOverflow:fullscreen #trailerDiv,
+#trailerOverflow:-webkit-full-screen #trailerDiv {
+  width: 100% !important;
+  height: 100% !important;
+  aspect-ratio: unset !important;
+}
