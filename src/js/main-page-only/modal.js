@@ -18,6 +18,9 @@ const watchedJSON = localStorage.getItem('watched');
 let queue = JSON.parse(queueJSON) || [];
 let watched = JSON.parse(watchedJSON) || [];
 
+// 🔹 Позиция скролла — сохраняется при открытии, восстанавливается при закрытии
+let savedScrollY = 0;
+
 allCardsSection.addEventListener('click', showModal);
 
 function updateMoviesList() {
@@ -27,6 +30,9 @@ function updateMoviesList() {
 
 export function showModal(e) {
   if (e.currentTarget !== e.target) {
+    // ✅ Сохраняем позицию ДО фиксации body
+    savedScrollY = window.scrollY;
+
     modal.classList.remove('hidden-modal');
     overflow.classList.remove('hidden-modal');
     allCardsSection.removeEventListener('click', showModal);
@@ -40,10 +46,9 @@ export function showModal(e) {
         : e.target.closest('div').dataset.id;
     createModal(id);
 
-    // Фиксируем body, чтобы не «ехала» страница под модалкой
-    const top = window.scrollY;
     body.style.position = 'fixed';
-    body.style.top = `-${top}px`;
+    body.style.top = `-${savedScrollY}px`;
+    body.style.width = '100%';
   }
 }
 
@@ -67,11 +72,16 @@ function closeModal() {
   closeBtn.removeEventListener('click', closeModal);
   overflow.removeEventListener('click', closeModalOverflow);
 
-  // 🔹 Восстанавливаем прежнюю позицию скролла
-  const savedTop = Math.abs(parseInt(body.style.top || '0', 10)) || 0;
+  // ✅ Снимаем фиксацию и возвращаем скролл на прежнее место
+  const y = savedScrollY;
   body.style.position = '';
   body.style.top = '';
-  window.scrollTo(0, savedTop);
+  body.style.width = '';
+
+  // requestAnimationFrame — чтобы браузер сначала применил снятие position: fixed
+  requestAnimationFrame(() => {
+    window.scrollTo(0, y);
+  });
 }
 
 function createModal(id) {
