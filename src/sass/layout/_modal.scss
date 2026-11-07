@@ -218,13 +218,66 @@
 }
 // 🔹 Крестик модалки — поднимаем над контентом
 .modal__close-btn {
-  z-index: 15;
-  cursor: pointer;
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+  bottom: auto !important;
+  left: auto !important;
+  z-index: 20 !important;
+  width: 30px;
+  height: 30px;
+  padding: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
 }
 
-// 🔹 Крестик трейлера — тоже поверх iframe
+// =====================================================
+//  🔹 КРЕСТИК ТРЕЙЛЕРА (YouTube / видеобалансер)
+//  Фиксируем к верхнему правому углу ЭКРАНА,
+//  чтобы он был виден поверх iframe.
+// =====================================================
 #trailerClose {
-  z-index: 100;
-  position: relative;
+  position: fixed !important;
+  top: 20px !important;
+  right: 20px !important;
+  bottom: auto !important;
+  left: auto !important;
+  z-index: 200 !important;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7) !important;
+  border: none !important;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 26px;
+  line-height: 1;
   cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+
+  &:hover,
+  &:focus {
+    background: rgba(0, 0, 0, 0.9) !important;
+    transform: scale(1.05);
+  }
+}
+
+// =====================================================
+//  🔹 Слои — гарантируем, что клики по трейлеру
+//  не проваливаются в overflow под ним.
+// =====================================================
+#trailerOverflow {
+  z-index: 15 !important;
+}
+
+#trailerModal {
+  position: relative;
+  z-index: 16 !important;
 }
