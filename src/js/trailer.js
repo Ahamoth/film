@@ -18,21 +18,67 @@ export function isTrailerOpen() {
 }
 
 // =====================================================
+//  🔹 FULLSCREEN HELPERS
+//  Вызывать ТОЛЬКО синхронно из обработчика клика!
+// =====================================================
+function enterFullscreen() {
+  const el = trailerOverflow;
+  if (!el) return Promise.resolve();
+
+  try {
+    if (el.requestFullscreen) {
+      return el.requestFullscreen({ navigationUI: 'hide' });
+    }
+    if (el.webkitRequestFullscreen) {
+      return el.webkitRequestFullscreen();
+    }
+    if (el.msRequestFullscreen) {
+      return el.msRequestFullscreen();
+    }
+  } catch (err) {
+    // iOS Safari и старые браузеры Fullscreen API на div не поддерживают
+    console.warn('Fullscreen request failed:', err);
+  }
+  return Promise.resolve();
+}
+
+function exitFullscreen() {
+  try {
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    }
+  } catch (err) {
+    console.warn('Exit fullscreen failed:', err);
+  }
+}
+
+// =====================================================
 //  WATCH MOVIE (видеобалансер)
 // =====================================================
 export async function watchTrailer(e) {
+  // ✅ 1. Fullscreen — СИНХРОННО, пока клик «жив»
+  enterFullscreen().catch(err => console.warn('Fullscreen:', err));
+
+  // ✅ 2. Открываем оверлей (анимации)
+  openTrailerOverlay();
+
+  // ✅ 3. Уже потом — сетевой запрос
   const imdbId = await fetchImdbId(e.target.dataset.id);
 
   if (!imdbId) {
     alert('Видео для этого фильма недоступно.');
+    closeTrailer();
     return;
   }
 
-  openTrailerOverlay();
-
+  // ✅ 4. Вставляем iframe (autoplay — пробуем параметром)
   trailerDiv.innerHTML = `
 <iframe
-  src="https://franko.uacdn.online/show/imdb/${imdbId}"
+  src="https://franko.uacdn.online/show/imdb/${imdbId}?autoplay=1"
   width="100%"
   height="100%"
   frameborder="0"
@@ -54,21 +100,30 @@ async function fetchImdbId(id) {
 }
 
 // =====================================================
-//  WATCH TRAILER (YouTube, приоритет ru → uk → en)
+//  WATCH TRAILER (YouTube, ru → uk → en, autoplay)
 // =====================================================
 export async function watchYoutubeTrailer(e) {
+  // ✅ 1. Fullscreen — синхронно
+  enterFullscreen().catch(err => console.warn('Fullscreen:', err));
+
+  // ✅ 2. Оверлей
+  openTrailerOverlay();
+
+  // ✅ 3. Данные
   const videoKey = await fetchYoutubeKey(e.target.dataset.id);
 
   if (!videoKey) {
     alert('Трейлер для этого фильма не найден.');
+    closeTrailer();
     return;
   }
 
-  openTrailerOverlay();
-
+  // ✅ 4. iframe с автовоспроизведением
+  //    playsinline=1 — не форсить нативный fullscreen на iOS
+  //    mute=0 — не глушить (пользователь кликнул → жест есть)
   trailerDiv.innerHTML = `
 <iframe
-  src="https://www.youtube.com/embed/${videoKey}?autoplay=1&rel=0"
+  src="https://www.youtube.com/embed/${videoKey}?autoplay=1&rel=0&playsinline=1&mute=0&modestbranding=1"
   width="100%"
   height="100%"
   frameborder="0"
@@ -119,6 +174,9 @@ function openTrailerOverlay() {
 function closeTrailer() {
   if (!trailerIsOpen) return;
   trailerIsOpen = false;
+
+  // Выходим из полноэкранного режима
+  exitFullscreen();
 
   trailerModal.classList.add('move-right');
   trailerOverflow.classList.add('move-right');
@@ -181,6 +239,21 @@ document.addEventListener('click', e => {
     watchYoutubeTrailer(e);
   }
 });
+
+// =====================================================
+//  🔹 Если пользователь сам вышел из fullscreen (Esc в браузере,
+//      жест вниз на Android) — закрываем и трейлер.
+// =====================================================
+function handleFullscreenExit() {
+  const isFs =
+    document.fullscreenElement || document.webkitFullscreenElement;
+  if (!isFs && trailerIsOpen) {
+    closeTrailer();
+  }
+}
+
+document.addEventListener('fullscreenchange', handleFullscreenExit);
+document.addEventListener('webkitfullscreenchange', handleFullscreenExit);
 
 // =====================================================
 //  🔹 Видимый крестик в #trailerClose
