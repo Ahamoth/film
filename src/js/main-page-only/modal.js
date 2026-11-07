@@ -40,6 +40,7 @@ export function showModal(e) {
         : e.target.closest('div').dataset.id;
     createModal(id);
 
+    // Фиксируем body, чтобы не «ехала» страница под модалкой
     const top = window.scrollY;
     body.style.position = 'fixed';
     body.style.top = `-${top}px`;
@@ -66,8 +67,11 @@ function closeModal() {
   closeBtn.removeEventListener('click', closeModal);
   overflow.removeEventListener('click', closeModalOverflow);
 
+  // 🔹 Восстанавливаем прежнюю позицию скролла
+  const savedTop = Math.abs(parseInt(body.style.top || '0', 10)) || 0;
   body.style.position = '';
   body.style.top = '';
+  window.scrollTo(0, savedTop);
 }
 
 function createModal(id) {
@@ -95,13 +99,8 @@ function addListeners(isInQueue, isInWatched) {
     watchedBtn.addEventListener('click', addToWatched);
   }
 
-  if (watchMovieBtn) {
-    watchMovieBtn.addEventListener('click', watchTrailer);
-  }
-
-  if (watchTrailerBtn) {
-    watchTrailerBtn.addEventListener('click', watchYoutubeTrailer);
-  }
+  if (watchMovieBtn) watchMovieBtn.addEventListener('click', watchTrailer);
+  if (watchTrailerBtn) watchTrailerBtn.addEventListener('click', watchYoutubeTrailer);
 
   [watchMovieBtn, watchTrailerBtn, queueBtn, watchedBtn, closeBtn].forEach(btn => {
     if (!btn) return;
@@ -110,7 +109,7 @@ function addListeners(isInQueue, isInWatched) {
   });
 }
 
-// ------- storage handlers (стандартная логика Filmoteka) -------
+// ------- storage handlers -------
 
 function addToWatched(e) {
   const id = e.target.dataset.id;
@@ -160,10 +159,7 @@ function removeFromQueue(e) {
   e.target.addEventListener('click', addToQueue);
 }
 
-// =====================================================
-//  🔹 ДЕЛЕГИРОВАННЫЙ ОБРАБОТЧИК КРЕСТИКА МОДАЛКИ
-//  Работает, даже если refs.closeBtn укажет не туда
-// =====================================================
+// 🔹 Делегирование крестика модалки (страховка)
 document.addEventListener('click', e => {
   if (e.target.closest('.modal__close-btn')) {
     closeModal();
