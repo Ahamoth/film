@@ -5,7 +5,6 @@ const {
   trailerOverflow,
   trailerModal,
   trailerDiv,
-  trailerCloseBtn,
   modal,
   overflow,
 } = refs;
@@ -13,7 +12,7 @@ const {
 const TMDB_API_KEY = '2d95e97f255e7635245c1980eab541d3';
 
 // =====================================================
-//  WATCH MOVIE (видеобалансер — оригинальная логика)
+//  WATCH MOVIE (видеобалансер)
 // =====================================================
 export async function watchTrailer(e) {
   const imdbId = await fetchImdbId(e.target.dataset.id);
@@ -42,7 +41,7 @@ async function fetchImdbId(id) {
 }
 
 // =====================================================
-//  WATCH TRAILER (YouTube — новая логика, с ru/uk)
+//  WATCH TRAILER (YouTube, ru/uk)
 // =====================================================
 export async function watchYoutubeTrailer(e) {
   const videoKey = await fetchYoutubeKey(e.target.dataset.id);
@@ -67,7 +66,6 @@ async function fetchYoutubeKey(id) {
 
     const videos = result.data.results || [];
 
-    // Приоритет: официальный трейлер → любой трейлер → тизер
     const trailer =
       videos.find(v => v.site === 'YouTube' && v.type === 'Trailer' && v.official) ||
       videos.find(v => v.site === 'YouTube' && v.type === 'Trailer') ||
@@ -81,16 +79,13 @@ async function fetchYoutubeKey(id) {
 }
 
 // =====================================================
-//  OPEN / CLOSE OVERLAY (общая логика)
+//  OPEN / CLOSE OVERLAY
 // =====================================================
 function openTrailerOverlay() {
   modal.classList.add('move-left');
   overflow.classList.add('move-left');
   trailerModal.classList.remove('move-right');
   trailerOverflow.classList.remove('move-right');
-
-  // ⚠️ НЕ добавляем обработчик на trailerCloseBtn здесь —
-  // он может быть null. Вместо этого используем делегирование.
 }
 
 function closeTrailer() {
@@ -114,28 +109,31 @@ function closeTrailerOnEsc(e) {
 }
 
 // =====================================================
-//  ГЛОБАЛЬНЫЕ ОБРАБОТЧИКИ (делегирование)
+//  ГЛОБАЛЬНЫЕ ОБРАБОТЧИКИ (делегирование — работают всегда)
 // =====================================================
 
-// 🔹 Закрытие по клику на фон (overlay)
+// 🔹 Закрытие трейлера по клику на крестик (#trailerClose — из refs.js)
 document.addEventListener('click', e => {
-  // Если кликнули именно по фону трейлера (не по контенту)
-  if (e.target === trailerOverflow) {
+  if (e.target.closest('#trailerClose')) {
     closeTrailer();
   }
 });
 
-// 🔹 Закрытие по клику на крестик (работает при любом селекторе)
+// 🔹 Закрытие трейлера по клику на фон (#trailerOverflow — из refs.js)
 document.addEventListener('click', e => {
-  // Ищем ближайший элемент с классом, который используется для крестика.
-  // ⚠️ Замените '.trailer-close-btn' на РЕАЛЬНЫЙ класс или id вашей кнопки-крестика.
-  const closeBtn = e.target.closest('.trailer-close-btn');
-  if (closeBtn) {
+  if (e.target.closest('#trailerOverflow') && !e.target.closest('#trailerDiv')) {
     closeTrailer();
   }
 });
 
-// 🔹 Обработчик новой кнопки «watch trailer»
+// 🔹 Esc закрывает трейлер (глобально)
+document.addEventListener('keydown', e => {
+  if (e.code === 'Escape' && trailerModal && !trailerModal.classList.contains('move-right')) {
+    closeTrailer();
+  }
+});
+
+// 🔹 Обработчик кнопки «watch trailer» в модалке
 document.addEventListener('click', e => {
   const btn = e.target.closest('.modal__btn-trailer');
   if (btn) {
