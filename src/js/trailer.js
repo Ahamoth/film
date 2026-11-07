@@ -10,47 +10,94 @@ const {
   overflow,
 } = refs;
 
-const API_KEY = '2d95e97f255e7635245c1980eab541d3'; // ваш ключ из api-service.js
+const TMDB_API_KEY = '2d95e97f255e7635245c1980eab541d3';
 
+// =====================================================
+//  WATCH MOVIE (videobalancer — оригинальная логика)
+// =====================================================
 export async function watchTrailer(e) {
-  const movieId = e.target.dataset.id;
+  const trailers = await fetchTrailer(e.target.dataset.id);
 
+  modal.classList.add('move-left');
+  overflow.classList.add('move-left');
+  trailerModal.classList.remove('move-right');
+  trailerOverflow.classList.remove('move-right');
+
+  document.addEventListener('keydown', closeTrailerOnEsc);
+  overflow.addEventListener('click', closeTrailerOverflow);
+  trailerCloseBtn.addEventListener('click', closeTrailer);
+
+  renderTrailer(trailers);
+}
+
+function renderTrailer(results) {
+  trailerDiv.innerHTML = `
+<iframe src="https://franko.uacdn.online/show/imdb/${results}"  width="840" height="560" frameborder="0" allowfullscreen></iframe>`;
+}
+
+async function fetchTrailer(id) {
   try {
-    const videoKey = await fetchTrailer(movieId);
-    if (!videoKey) {
-      alert('Трейлер для этого фильма не найден.');
-      return;
-    }
-
-    modal.classList.add('move-left');
-    overflow.classList.add('move-left');
-    trailerModal.classList.remove('move-right');
-    trailerOverflow.classList.remove('move-right');
-
-    document.addEventListener('keydown', closeTrailerOnEsc);
-    overflow.addEventListener('click', closeTrailerOverflow);
-    trailerCloseBtn.addEventListener('click', closeTrailer);
-
-    renderTrailer(videoKey);
+    const result = await axios.get(
+      `https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}`
+    );
+    return result.data.imdb_id;
   } catch (error) {
-    console.error('Ошибка при загрузке трейлера:', error);
-    alert('Не удалось загрузить трейлер. Попробуйте позже.');
+    console.log(error);
   }
 }
 
-function renderTrailer(videoKey) {
+// =====================================================
+//  WATCH TRAILER (YouTube — новая логика)
+// =====================================================
+export async function watchYoutubeTrailer(e) {
+  const btn = e.target.closest('.modal__btn-trailer') || e.target;
+  const id = btn.dataset.id;
+  const videoKey = await fetchYoutubeKey(id);
+
+  if (!videoKey) {
+    alert('Trailer not available for this movie.');
+    return;
+  }
+
+  modal.classList.add('move-left');
+  overflow.classList.add('move-left');
+  trailerModal.classList.remove('move-right');
+  trailerOverflow.classList.remove('move-right');
+
+  document.addEventListener('keydown', closeTrailerOnEsc);
+  overflow.addEventListener('click', closeTrailerOverflow);
+  trailerCloseBtn.addEventListener('click', closeTrailer);
+
   trailerDiv.innerHTML = `
-    <iframe
-      class="trailer-iframe"
-      src="https://www.youtube.com/embed/${videoKey}?autoplay=1&rel=0"
-      title="YouTube trailer"
-      frameborder="0"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-      allowfullscreen
-    ></iframe>
-  `;
+<iframe src="https://www.youtube.com/embed/${videoKey}?autoplay=1&rel=0"  width="840" height="560" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
 }
 
+async function fetchYoutubeKey(id) {
+  try {
+    const result = await axios.get(
+      `https://api.themoviedb.org/3/movie/${id}/videos?api_key=${TMDB_API_KEY}&language=en-US`
+    );
+    const videos = result.data.results || [];
+    const trailer =
+      videos.find(v => v.site === 'YouTube' && v.type === 'Trailer' && v.official) ||
+      videos.find(v => v.site === 'YouTube' && v.type === 'Trailer') ||
+      videos.find(v => v.site === 'YouTube' && v.type === 'Teaser');
+    return trailer ? trailer.key : null;
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+}
+
+// Обработчик новой кнопки (делегирование — не нужно править modal.js)
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.modal__btn-trailer');
+  if (btn) watchYoutubeTrailer(e);
+});
+
+// =====================================================
+//  SHARED CLOSE LOGIC (без изменений)
+// =====================================================
 function closeTrailerOverflow(e) {
   if (e.currentTarget === e.target) closeTrailer();
 }
@@ -75,17 +122,4 @@ function closeTrailer() {
 function stopVideo() {
   trailerDiv.innerHTML = '';
   trailerModal.removeEventListener('transitionend', stopVideo);
-}
-
-async function fetchTrailer(movieId) {
-  const url = `https://api.themoviedb.org/3/movie/${movieId}/videos?api_key=${API_KEY}&language=en-US`;
-  const { data } = await axios.get(url);
-  const videos = data.results || [];
-
-  const trailer =
-    videos.find(v => v.site === 'YouTube' && v.type === 'Trailer' && v.official) ||
-    videos.find(v => v.site === 'YouTube' && v.type === 'Trailer') ||
-    videos.find(v => v.site === 'YouTube' && v.type === 'Teaser');
-
-  return trailer ? trailer.key : null;
 }
