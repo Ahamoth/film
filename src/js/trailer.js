@@ -169,3 +169,49 @@ document.addEventListener('click', e => {
     watchYoutubeTrailer(e);
   }
 });
+// =====================================================
+//  🔹 Гарантируем видимый крестик в #trailerClose
+// =====================================================
+function ensureTrailerCloseIcon() {
+  const btn = document.querySelector('#trailerClose');
+  if (!btn) return;
+
+  // Ставим чистый, всегда видимый SVG-крестик
+  btn.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg"
+         viewBox="0 0 24 24"
+         width="22" height="22"
+         fill="none"
+         stroke="#ffffff"
+         stroke-width="2.5"
+         stroke-linecap="round">
+      <line x1="6" y1="6" x2="18" y2="18"/>
+      <line x1="18" y1="6" x2="6" y2="18"/>
+    </svg>
+  `;
+
+  // На всякий случай ещё раз фиксируем видимость
+  const svg = btn.querySelector('svg');
+  if (svg) {
+    svg.style.display = 'block';
+    svg.style.pointerEvents = 'none';
+  }
+}
+
+// Запускаем сразу и после полной загрузки DOM (на случай, если кнопка появляется позже)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', ensureTrailerCloseIcon);
+} else {
+  ensureTrailerCloseIcon();
+}
+
+// Если оверлей вставляется динамически — повторяем на клик по «watch trailer/movie»
+document.addEventListener('click', e => {
+  if (
+    e.target.closest('.modal__btn-trailer') ||
+    e.target.closest('.modal__btn-watch-trailer')
+  ) {
+    // небольшая задержка — оверлей уже в DOM
+    setTimeout(ensureTrailerCloseIcon, 0);
+  }
+});
