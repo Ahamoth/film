@@ -3,7 +3,15 @@ import { refs } from '../refs';
 import Notiflix from 'notiflix';
 import { renderModal } from '../render-modal';
 
-const { allCardsSection, modal, overflow, closeBtn, innerModal, cursor, body } = refs;
+const {
+  allCardsSection,
+  modal,
+  overflow,
+  closeBtn,
+  innerModal,
+  cursor,
+  body,
+} = refs;
 
 const queueJSON = localStorage.getItem('queue');
 const watchedJSON = localStorage.getItem('watched');
@@ -17,11 +25,6 @@ function updateMoviesList() {
   return JSON.parse(allMoviesListFromStorage);
 }
 
-function addToWatched(e) { /* ... без изменений ... */ }
-function removeFromWatched(e) { /* ... без изменений ... */ }
-function addToQueue(e) { /* ... без изменений ... */ }
-function removeFromQueue(e) { /* ... без изменений ... */ }
-
 export function showModal(e) {
   if (e.currentTarget !== e.target) {
     modal.classList.remove('hidden-modal');
@@ -31,7 +34,10 @@ export function showModal(e) {
     closeBtn.addEventListener('click', closeModal);
     overflow.addEventListener('click', closeModalOverflow);
 
-    const id = e.target.nodeName === 'DIV' ? e.target.dataset.id : e.target.closest('div').dataset.id;
+    const id =
+      e.target.nodeName === 'DIV'
+        ? e.target.dataset.id
+        : e.target.closest('div').dataset.id;
     createModal(id);
 
     const top = window.scrollY;
@@ -40,9 +46,29 @@ export function showModal(e) {
   }
 }
 
-function closeModalOverflow(e) { /* ... без изменений ... */ }
-function closeModalOnEsc(e) { /* ... без изменений ... */ }
-function closeModal() { /* ... без изменений ... */ }
+function closeModalOverflow(e) {
+  if (e.currentTarget === e.target) {
+    closeModal();
+  }
+}
+
+function closeModalOnEsc(e) {
+  if (e.code === 'Escape') {
+    closeModal();
+  }
+}
+
+function closeModal() {
+  modal.classList.add('hidden-modal');
+  overflow.classList.add('hidden-modal');
+  allCardsSection.addEventListener('click', showModal);
+  document.removeEventListener('keydown', closeModalOnEsc);
+  closeBtn.removeEventListener('click', closeModal);
+  overflow.removeEventListener('click', closeModalOverflow);
+
+  body.style.position = '';
+  body.style.top = '';
+}
 
 function createModal(id) {
   const currentList = updateMoviesList();
@@ -55,20 +81,24 @@ function addListeners(isInQueue, isInWatched) {
   const watchedBtn = document.querySelector('.modal__btn-watched');
   const queueBtn = document.querySelector('.modal__btn-queue');
   const watchMovieBtn = document.querySelector('.modal__btn-watch-trailer');
-  const watchTrailerBtn = document.querySelector('.modal__btn-trailer'); // 🆕
+  const watchTrailerBtn = document.querySelector('.modal__btn-trailer');
 
-  isInQueue
-    ? queueBtn.addEventListener('click', removeFromQueue)
-    : queueBtn.addEventListener('click', addToQueue);
+  if (isInQueue) {
+    queueBtn.addEventListener('click', removeFromQueue);
+  } else {
+    queueBtn.addEventListener('click', addToQueue);
+  }
 
-  isInWatched
-    ? watchedBtn.addEventListener('click', removeFromWatched)
-    : watchedBtn.addEventListener('click', addToWatched);
+  if (isInWatched) {
+    watchedBtn.addEventListener('click', removeFromWatched);
+  } else {
+    watchedBtn.addEventListener('click', addToWatched);
+  }
 
-  // Видеобалансер
-  watchMovieBtn.addEventListener('click', watchTrailer);
+  if (watchMovieBtn) {
+    watchMovieBtn.addEventListener('click', watchTrailer);
+  }
 
-  // 🆕 YouTube-трейлер
   if (watchTrailerBtn) {
     watchTrailerBtn.addEventListener('click', watchYoutubeTrailer);
   }
@@ -79,3 +109,63 @@ function addListeners(isInQueue, isInWatched) {
     btn.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
   });
 }
+
+// ------- storage handlers (стандартная логика Filmoteka) -------
+
+function addToWatched(e) {
+  const id = e.target.dataset.id;
+  const currentList = updateMoviesList();
+  const film = currentList[id];
+  if (!watched.find(movie => movie.id === film.id)) {
+    watched.push(film);
+    localStorage.setItem('watched', JSON.stringify(watched));
+  }
+  e.target.textContent = 'remove from watched';
+  e.target.removeEventListener('click', addToWatched);
+  e.target.addEventListener('click', removeFromWatched);
+}
+
+function removeFromWatched(e) {
+  const id = e.target.dataset.id;
+  const currentList = updateMoviesList();
+  const film = currentList[id];
+  watched = watched.filter(movie => movie.id !== film.id);
+  localStorage.setItem('watched', JSON.stringify(watched));
+  e.target.textContent = 'add to watched';
+  e.target.removeEventListener('click', removeFromWatched);
+  e.target.addEventListener('click', addToWatched);
+}
+
+function addToQueue(e) {
+  const id = e.target.dataset.id;
+  const currentList = updateMoviesList();
+  const film = currentList[id];
+  if (!queue.find(movie => movie.id === film.id)) {
+    queue.push(film);
+    localStorage.setItem('queue', JSON.stringify(queue));
+  }
+  e.target.textContent = 'remove from queue';
+  e.target.removeEventListener('click', addToQueue);
+  e.target.addEventListener('click', removeFromQueue);
+}
+
+function removeFromQueue(e) {
+  const id = e.target.dataset.id;
+  const currentList = updateMoviesList();
+  const film = currentList[id];
+  queue = queue.filter(movie => movie.id !== film.id);
+  localStorage.setItem('queue', JSON.stringify(queue));
+  e.target.textContent = 'add to queue';
+  e.target.removeEventListener('click', removeFromQueue);
+  e.target.addEventListener('click', addToQueue);
+}
+
+// =====================================================
+//  🔹 ДЕЛЕГИРОВАННЫЙ ОБРАБОТЧИК КРЕСТИКА МОДАЛКИ
+//  Работает, даже если refs.closeBtn укажет не туда
+// =====================================================
+document.addEventListener('click', e => {
+  if (e.target.closest('.modal__close-btn')) {
+    closeModal();
+  }
+});
