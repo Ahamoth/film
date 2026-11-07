@@ -38,6 +38,7 @@ export function renderModal(list, id, watched, queue) {
     </button>
   `;
 
+  // 🆕 Новая кнопка трейлера
   const trailerBtnMarkup = `
     <button class="modal__btn-watch-trailer" type="button" data-id="${film_id}">
       Watch trailer
@@ -100,8 +101,9 @@ export function renderModal(list, id, watched, queue) {
           <div class="modal__add-btns">
             ${watchedBtnMarkup}
             ${queueBtnMarkup}
+            ${trailerBtnMarkup}  <!-- 🆕 кнопка трейлера -->
           </div>
-          ${trailerBtnMarkup}
+          <button class="modal__btn-watch" ...>watch movie</button>  <!-- ✅ ваша кнопка видеобалансера -->
         </div>
       </div>
     </div>
