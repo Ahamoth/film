@@ -23,19 +23,8 @@ export async function watchTrailer(e) {
     return;
   }
 
-  modal.classList.add('move-left');
-  overflow.classList.add('move-left');
-  trailerModal.classList.remove('move-right');
-  trailerOverflow.classList.remove('move-right');
+  openTrailerOverlay();
 
-  document.addEventListener('keydown', closeTrailerOnEsc);
-  overflow.addEventListener('click', closeTrailerOverflow);
-  trailerCloseBtn.addEventListener('click', closeTrailer);
-
-  renderTrailer(imdbId);
-}
-
-function renderTrailer(imdbId) {
   trailerDiv.innerHTML = `
 <iframe src="https://franko.uacdn.online/show/imdb/${imdbId}" width="840" height="560" frameborder="0" allowfullscreen></iframe>`;
 }
@@ -53,7 +42,7 @@ async function fetchImdbId(id) {
 }
 
 // =====================================================
-//  WATCH TRAILER (YouTube — новая логика)
+//  WATCH TRAILER (YouTube — новая логика, с ru/uk)
 // =====================================================
 export async function watchYoutubeTrailer(e) {
   const videoKey = await fetchYoutubeKey(e.target.dataset.id);
@@ -63,14 +52,7 @@ export async function watchYoutubeTrailer(e) {
     return;
   }
 
-  modal.classList.add('move-left');
-  overflow.classList.add('move-left');
-  trailerModal.classList.remove('move-right');
-  trailerOverflow.classList.remove('move-right');
-
-  document.addEventListener('keydown', closeTrailerOnEsc);
-  overflow.addEventListener('click', closeTrailerOverflow);
-  trailerCloseBtn.addEventListener('click', closeTrailer);
+  openTrailerOverlay();
 
   trailerDiv.innerHTML = `
 <iframe src="https://www.youtube.com/embed/${videoKey}?autoplay=1&rel=0" width="840" height="560" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
@@ -78,14 +60,19 @@ export async function watchYoutubeTrailer(e) {
 
 async function fetchYoutubeKey(id) {
   try {
+    // 🔑 include_video_language — ключевой параметр для ru/uk
     const result = await axios.get(
-      `https://api.themoviedb.org/3/movie/${id}/videos?api_key=${TMDB_API_KEY}&language=en-US`
+      `https://api.themoviedb.org/3/movie/${id}/videos?api_key=${TMDB_API_KEY}&language=ru-RU&include_video_language=ru,uk,en`
     );
+
     const videos = result.data.results || [];
+
+    // Приоритет: официальный трейлер → любой трейлер → тизер
     const trailer =
       videos.find(v => v.site === 'YouTube' && v.type === 'Trailer' && v.official) ||
       videos.find(v => v.site === 'YouTube' && v.type === 'Trailer') ||
       videos.find(v => v.site === 'YouTube' && v.type === 'Teaser');
+
     return trailer ? trailer.key : null;
   } catch (error) {
     console.log(error);
@@ -93,23 +80,17 @@ async function fetchYoutubeKey(id) {
   }
 }
 
-// Делегирование для новой кнопки (не требует правок в modal.js)
-document.addEventListener('click', e => {
-  const btn = e.target.closest('.modal__btn-trailer');
-  if (btn) {
-    watchYoutubeTrailer(e);
-  }
-});
-
 // =====================================================
-//  SHARED CLOSE LOGIC (без изменений)
+//  OPEN / CLOSE OVERLAY (общая логика)
 // =====================================================
-function closeTrailerOverflow(e) {
-  if (e.currentTarget === e.target) closeTrailer();
-}
+function openTrailerOverlay() {
+  modal.classList.add('move-left');
+  overflow.classList.add('move-left');
+  trailerModal.classList.remove('move-right');
+  trailerOverflow.classList.remove('move-right');
 
-function closeTrailerOnEsc(e) {
-  if (e.code === 'Escape') closeTrailer();
+  // ⚠️ НЕ добавляем обработчик на trailerCloseBtn здесь —
+  // он может быть null. Вместо этого используем делегирование.
 }
 
 function closeTrailer() {
@@ -119,8 +100,6 @@ function closeTrailer() {
   overflow.classList.remove('move-left');
 
   document.removeEventListener('keydown', closeTrailerOnEsc);
-  overflow.removeEventListener('click', closeTrailerOverflow);
-  trailerCloseBtn.removeEventListener('click', closeTrailer);
 
   trailerModal.addEventListener('transitionend', stopVideo);
 }
@@ -129,3 +108,37 @@ function stopVideo() {
   trailerDiv.innerHTML = '';
   trailerModal.removeEventListener('transitionend', stopVideo);
 }
+
+function closeTrailerOnEsc(e) {
+  if (e.code === 'Escape') closeTrailer();
+}
+
+// =====================================================
+//  ГЛОБАЛЬНЫЕ ОБРАБОТЧИКИ (делегирование)
+// =====================================================
+
+// 🔹 Закрытие по клику на фон (overlay)
+document.addEventListener('click', e => {
+  // Если кликнули именно по фону трейлера (не по контенту)
+  if (e.target === trailerOverflow) {
+    closeTrailer();
+  }
+});
+
+// 🔹 Закрытие по клику на крестик (работает при любом селекторе)
+document.addEventListener('click', e => {
+  // Ищем ближайший элемент с классом, который используется для крестика.
+  // ⚠️ Замените '.trailer-close-btn' на РЕАЛЬНЫЙ класс или id вашей кнопки-крестика.
+  const closeBtn = e.target.closest('.trailer-close-btn');
+  if (closeBtn) {
+    closeTrailer();
+  }
+});
+
+// 🔹 Обработчик новой кнопки «watch trailer»
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.modal__btn-trailer');
+  if (btn) {
+    watchYoutubeTrailer(e);
+  }
+});
