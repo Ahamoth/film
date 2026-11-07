@@ -31,7 +31,14 @@ export async function watchTrailer(e) {
   openTrailerOverlay();
 
   trailerDiv.innerHTML = `
-<iframe src="https://franko.uacdn.online/show/imdb/${imdbId}" width="840" height="560" frameborder="0" allowfullscreen></iframe>`;
+<iframe
+  src="https://franko.uacdn.online/show/imdb/${imdbId}"
+  width="100%"
+  height="100%"
+  frameborder="0"
+  allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+  allowfullscreen
+></iframe>`;
 }
 
 async function fetchImdbId(id) {
@@ -60,7 +67,14 @@ export async function watchYoutubeTrailer(e) {
   openTrailerOverlay();
 
   trailerDiv.innerHTML = `
-<iframe src="https://www.youtube.com/embed/${videoKey}?autoplay=1&rel=0" width="840" height="560" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
+<iframe
+  src="https://www.youtube.com/embed/${videoKey}?autoplay=1&rel=0"
+  width="100%"
+  height="100%"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+  allowfullscreen
+></iframe>`;
 }
 
 async function fetchYoutubeKey(id) {
@@ -71,16 +85,15 @@ async function fetchYoutubeKey(id) {
 
     const videos = result.data.results || [];
 
-    // 🎯 Приоритеты
     const langRank = { ru: 0, uk: 1, en: 2 };
     const typeRank = { Trailer: 0, Teaser: 1 };
 
     const scored = videos
       .filter(v => v.site === 'YouTube' && v.key)
       .map(v => {
-        const lang = langRank[v.iso_639_1] ?? 3;     // неизвестные языки — в конец
-        const type = typeRank[v.type] ?? 2;           // Featurette и пр. — в конец
-        const officialBonus = v.official ? 0 : 10;    // официальные впереди
+        const lang = langRank[v.iso_639_1] ?? 3;
+        const type = typeRank[v.type] ?? 2;
+        const officialBonus = v.official ? 0 : 10;
         return { video: v, score: lang * 1000 + type * 100 + officialBonus };
       })
       .sort((a, b) => a.score - b.score);
