@@ -11,6 +11,14 @@ const {
 
 const TMDB_API_KEY = '2d95e97f255e7635245c1980eab541d3';
 
+// 🔒 Флаг — чтобы closeTrailer никогда не срабатывал дважды
+let trailerIsOpen = false;
+
+// Экспортируем состояние — пригодится, если позже понадобится
+export function isTrailerOpen() {
+  return trailerIsOpen;
+}
+
 // =====================================================
 //  WATCH MOVIE (видеобалансер)
 // =====================================================
@@ -59,7 +67,7 @@ export async function watchYoutubeTrailer(e) {
 
 async function fetchYoutubeKey(id) {
   try {
-    // 🔑 include_video_language — ключевой параметр для ru/uk
+    // 🔑 include_video_language — ключ к ru/uk
     const result = await axios.get(
       `https://api.themoviedb.org/3/movie/${id}/videos?api_key=${TMDB_API_KEY}&language=ru-RU&include_video_language=ru,uk,en`
     );
@@ -82,6 +90,7 @@ async function fetchYoutubeKey(id) {
 //  OPEN / CLOSE OVERLAY
 // =====================================================
 function openTrailerOverlay() {
+  trailerIsOpen = true;
   modal.classList.add('move-left');
   overflow.classList.add('move-left');
   trailerModal.classList.remove('move-right');
@@ -89,12 +98,13 @@ function openTrailerOverlay() {
 }
 
 function closeTrailer() {
+  if (!trailerIsOpen) return; // 🔒 защита от повторного срабатывания
+  trailerIsOpen = false;
+
   trailerModal.classList.add('move-right');
   trailerOverflow.classList.add('move-right');
   modal.classList.remove('move-left');
   overflow.classList.remove('move-left');
-
-  document.removeEventListener('keydown', closeTrailerOnEsc);
 
   trailerModal.addEventListener('transitionend', stopVideo);
 }
@@ -104,36 +114,55 @@ function stopVideo() {
   trailerModal.removeEventListener('transitionend', stopVideo);
 }
 
-function closeTrailerOnEsc(e) {
-  if (e.code === 'Escape') closeTrailer();
-}
-
 // =====================================================
-//  ГЛОБАЛЬНЫЕ ОБРАБОТЧИКИ (делегирование — работают всегда)
+//  🛡️ CAPTURE-PHASE HANDLERS
+//  Срабатывают РАНЬШЕ bubbling-обработчиков modal.js,
+//  поэтому модалка не получит клик при закрытии трейлера.
 // =====================================================
 
-// 🔹 Закрытие трейлера по клику на крестик (#trailerClose — из refs.js)
-document.addEventListener('click', e => {
-  if (e.target.closest('#trailerClose')) {
-    closeTrailer();
-  }
-});
+// 🔹 Крестик трейлера (#trailerClose)
+document.addEventListener(
+  'click',
+  e => {
+    if (e.target.closest('#trailerClose')) {
+      e.stopPropagation();
+      e.preventDefault();
+      closeTrailer();
+    }
+  },
+  true // ← capture phase
+);
 
-// 🔹 Закрытие трейлера по клику на фон (#trailerOverflow — из refs.js)
-document.addEventListener('click', e => {
-  if (e.target.closest('#trailerOverflow') && !e.target.closest('#trailerDiv')) {
-    closeTrailer();
-  }
-});
+// 🔹 Клик по фону трейлера (#trailerOverflow), но не по iframe
+document.addEventListener(
+  'click',
+  e => {
+    if (
+      e.target.closest('#trailerOverflow') &&
+      !e.target.closest('#trailerDiv') &&
+      !e.target.closest('#trailerClose')
+    ) {
+      e.stopPropagation();
+      closeTrailer();
+    }
+  },
+  true
+);
 
-// 🔹 Esc закрывает трейлер (глобально)
-document.addEventListener('keydown', e => {
-  if (e.code === 'Escape' && trailerModal && !trailerModal.classList.contains('move-right')) {
-    closeTrailer();
-  }
-});
+// 🔹 Esc — закрывает ТОЛЬКО трейлер, не трогая модалку
+document.addEventListener(
+  'keydown',
+  e => {
+    if (e.code === 'Escape' && trailerIsOpen) {
+      e.stopPropagation();
+      e.preventDefault();
+      closeTrailer();
+    }
+  },
+  true
+);
 
-// 🔹 Обработчик кнопки «watch trailer» в модалке
+// 🔹 Кнопка «watch trailer» в модалке (bubbling — не мешает)
 document.addEventListener('click', e => {
   const btn = e.target.closest('.modal__btn-trailer');
   if (btn) {
