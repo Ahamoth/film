@@ -10,7 +10,7 @@ const {
   overflow,
 } = refs;
 
-const API_KEY = '2d95e97f255e7635245c1980eab541d3'; // ключ из api-service.js
+const API_KEY = '2d95e97f255e7635245c1980eab541d3'; // ваш ключ из api-service.js
 
 export async function watchTrailer(e) {
   const movieId = e.target.dataset.id;
@@ -22,7 +22,6 @@ export async function watchTrailer(e) {
       return;
     }
 
-    // Показываем оверлей трейлера, сдвигая основное модальное окно
     modal.classList.add('move-left');
     overflow.classList.add('move-left');
     trailerModal.classList.remove('move-right');
