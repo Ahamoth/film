@@ -12,97 +12,100 @@ export function renderModal(list, id, watched, queue) {
     overview,
     id: film_id,
   } = list[id];
+
   const genres = JSON.parse(localStorage.getItem('allGenres'));
   const finalGenres = [];
   genre_ids.forEach(idx => {
-    finalGenres.push(genres.find(genre => genre.id === idx).name);
+    const genre = genres.find(genre => genre.id === idx);
+    if (genre) finalGenres.push(genre.name);
   });
 
   const foundInWatched = watched.find(film => film.id === film_id);
   const foundInQueue = queue.find(film => film.id === film_id);
-
   const isInQueue = !!foundInQueue;
   const isInWatched = !!foundInWatched;
 
-  const queueBtnMarkup = isInQueue
-    ? `<button class="modal__btn-queue interactive-button" data-id=${id}>remove from queue</button>`
-    : `<button class="modal__btn-queue interactive-button" data-id=${id}>add to queue</button>`;
+  // --- Разметка кнопок ---
+  const queueBtnMarkup = `
+    <button class="modal__btn-queue" type="button" data-id="${film_id}">
+      ${isInQueue ? 'remove from queue' : 'add to queue'}
+    </button>
+  `;
 
-  const watchedBtnMarkup = isInWatched
-    ? `<button class="modal__btn-watched interactive-button" data-id=${id}>
-        remove from watched
-      </button>`
-    : `<button class="modal__btn-watched interactive-button" data-id=${id}>
-       add to watched
-      </button>`;
+  const watchedBtnMarkup = `
+    <button class="modal__btn-watched" type="button" data-id="${film_id}">
+      ${isInWatched ? 'remove from watched' : 'add to watched'}
+    </button>
+  `;
 
-  const voteCount =
-    vote_count && vote_average
-      ? `<li class="modal__item">
-          <div class="modal__item-first">Vote / Votes</div>
-          <div class="modal__item-votes">
-            <span class="modal__item-bg modal__item--accent">${vote_average.toFixed(
-              1
-            )}</span> /
-            <span class="modal__item-bg modal__item--grey">${vote_count}</span>
+  const trailerBtnMarkup = `
+    <button class="modal__btn-watch-trailer" type="button" data-id="${film_id}">
+      Watch trailer
+    </button>
+  `;
+
+  // --- Остальные блоки (без изменений) ---
+  const voteCount = vote_count && vote_average ? `
+    <li class="modal__item">
+      <span class="modal__item-first">Vote / Votes</span>
+      <span class="modal__item-bg modal__item--accent">${vote_average.toFixed(1)}</span> / ${vote_count}
+    </li>
+  ` : '';
+
+  const popularityMarkup = popularity ? `
+    <li class="modal__item">
+      <span class="modal__item-first">Popularity</span>
+      <span>${popularity.toFixed(1)}</span>
+    </li>
+  ` : '';
+
+  const genresMarkup = finalGenres.length ? `
+    <li class="modal__item">
+      <span class="modal__item-first">Genre</span>
+      <span>${finalGenres.join(', ')}</span>
+    </li>
+  ` : '';
+
+  const originalTitleMarkup = original_title ? `
+    <li class="modal__item">
+      <span class="modal__item-first">Original Title</span>
+      <span>${original_title}</span>
+    </li>
+  ` : '';
+
+  const overviewMarkup = overview ? `
+    <h3 class="modal__about-headline">About</h3>
+    <p class="modal__about-text">${overview}</p>
+  ` : '';
+
+  const photoMarkup = poster_path ? `
+    <img class="modal__img" src="https://image.tmdb.org/t/p/w500${poster_path}" alt="${title}" />
+  ` : `
+    <img class="modal__img" src="${emptyPhoto}" alt="photo coming soon" />
+  `;
+
+  const markup = `
+    <div class="modal__main">
+      ${photoMarkup}
+      <div class="modal__about">
+        <h2 class="modal__headline">${title}</h2>
+        <ul class="modal__list">
+          ${voteCount}
+          ${popularityMarkup}
+          ${originalTitleMarkup}
+          ${genresMarkup}
+        </ul>
+        ${overviewMarkup}
+        <div class="modal__buttons">
+          <div class="modal__add-btns">
+            ${watchedBtnMarkup}
+            ${queueBtnMarkup}
           </div>
-        </li>`
-      : '';
-  const popularityMarkup = popularity
-    ? `<li class="modal__item">
-          <div class="modal__item-first">Popularity</div>
-          <div>${popularity.toFixed(1)}</div>
-        </li>`
-    : '';
-  const genresMarkup = finalGenres.length
-    ? `<li class="modal__item">
-          <div class="modal__item-first">Genre</div>
-          <div>${finalGenres.join(', ')}</div>
-        </li>`
-    : '';
-  const originalTitleMarkup = original_title
-    ? `<li class="modal__item">
-          <div class="modal__item-first">Original Title</div>
-          <div class="modal__item-title">${original_title}</div>
-        </li>`
-    : '';
-  const overviewMarkup = overview
-    ? `<div class="modal__about-info">
-        <p class="modal__about-headline">About</p>
-        <p class="modal__about-text">
-          ${overview}
-        </p>
-      </div>`
-    : '';
-  const photoMarkup = poster_path
-    ? `<div class="modal__img">
-      <img src="https://image.tmdb.org/t/p/w500${poster_path}" alt="${title}" />
-    </div>`
-    : `<div class="modal__img">
-      <img src="${emptyPhoto}" alt="photo coming soon" />
-    </div>`;
-
-  return [
-    `${photoMarkup}
-    <div class="modal__about">
-      <div class="modal__headline">${title}</div>
-      <ul class="modal__list">
-        ${voteCount}
-        ${popularityMarkup}
-        ${originalTitleMarkup}
-        ${genresMarkup}
-      </ul> 
-      ${overviewMarkup}
-          <div class="modal__buttons">
-      <div class="modal__add-btns">
-        ${watchedBtnMarkup}
-        ${queueBtnMarkup}
+          ${trailerBtnMarkup}
+        </div>
       </div>
-      <button class='modal_btn-watched interactive-button modal__btn-watch-trailer' data-id=${film_id}>watch movie</button>
     </div>
-    </div>
-    `,
-    isInQueue,
-    isInWatched,
-  ];
+  `;
+
+  return [markup, isInQueue, isInWatched];
 }
