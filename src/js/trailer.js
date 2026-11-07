@@ -11,10 +11,8 @@ const {
 
 const TMDB_API_KEY = '2d95e97f255e7635245c1980eab541d3';
 
-// 🔒 Флаг — чтобы closeTrailer никогда не срабатывал дважды
 let trailerIsOpen = false;
 
-// Экспортируем состояние — пригодится, если позже понадобится
 export function isTrailerOpen() {
   return trailerIsOpen;
 }
@@ -49,7 +47,7 @@ async function fetchImdbId(id) {
 }
 
 // =====================================================
-//  WATCH TRAILER (YouTube, ru/uk)
+//  WATCH TRAILER (YouTube, приоритет ru → uk → en)
 // =====================================================
 export async function watchYoutubeTrailer(e) {
   const videoKey = await fetchYoutubeKey(e.target.dataset.id);
@@ -67,19 +65,27 @@ export async function watchYoutubeTrailer(e) {
 
 async function fetchYoutubeKey(id) {
   try {
-    // 🔑 include_video_language — ключ к ru/uk
     const result = await axios.get(
       `https://api.themoviedb.org/3/movie/${id}/videos?api_key=${TMDB_API_KEY}&language=ru-RU&include_video_language=ru,uk,en`
     );
 
     const videos = result.data.results || [];
 
-    const trailer =
-      videos.find(v => v.site === 'YouTube' && v.type === 'Trailer' && v.official) ||
-      videos.find(v => v.site === 'YouTube' && v.type === 'Trailer') ||
-      videos.find(v => v.site === 'YouTube' && v.type === 'Teaser');
+    // 🎯 Приоритеты
+    const langRank = { ru: 0, uk: 1, en: 2 };
+    const typeRank = { Trailer: 0, Teaser: 1 };
 
-    return trailer ? trailer.key : null;
+    const scored = videos
+      .filter(v => v.site === 'YouTube' && v.key)
+      .map(v => {
+        const lang = langRank[v.iso_639_1] ?? 3;     // неизвестные языки — в конец
+        const type = typeRank[v.type] ?? 2;           // Featurette и пр. — в конец
+        const officialBonus = v.official ? 0 : 10;    // официальные впереди
+        return { video: v, score: lang * 1000 + type * 100 + officialBonus };
+      })
+      .sort((a, b) => a.score - b.score);
+
+    return scored.length ? scored[0].video.key : null;
   } catch (error) {
     console.log(error);
     return null;
@@ -98,7 +104,7 @@ function openTrailerOverlay() {
 }
 
 function closeTrailer() {
-  if (!trailerIsOpen) return; // 🔒 защита от повторного срабатывания
+  if (!trailerIsOpen) return;
   trailerIsOpen = false;
 
   trailerModal.classList.add('move-right');
@@ -116,11 +122,7 @@ function stopVideo() {
 
 // =====================================================
 //  🛡️ CAPTURE-PHASE HANDLERS
-//  Срабатывают РАНЬШЕ bubbling-обработчиков modal.js,
-//  поэтому модалка не получит клик при закрытии трейлера.
 // =====================================================
-
-// 🔹 Крестик трейлера (#trailerClose)
 document.addEventListener(
   'click',
   e => {
@@ -130,10 +132,9 @@ document.addEventListener(
       closeTrailer();
     }
   },
-  true // ← capture phase
+  true
 );
 
-// 🔹 Клик по фону трейлера (#trailerOverflow), но не по iframe
 document.addEventListener(
   'click',
   e => {
@@ -149,7 +150,6 @@ document.addEventListener(
   true
 );
 
-// 🔹 Esc — закрывает ТОЛЬКО трейлер, не трогая модалку
 document.addEventListener(
   'keydown',
   e => {
@@ -162,21 +162,20 @@ document.addEventListener(
   true
 );
 
-// 🔹 Кнопка «watch trailer» в модалке (bubbling — не мешает)
 document.addEventListener('click', e => {
   const btn = e.target.closest('.modal__btn-trailer');
   if (btn) {
     watchYoutubeTrailer(e);
   }
 });
+
 // =====================================================
-//  🔹 Гарантируем видимый крестик в #trailerClose
+//  🔹 Видимый крестик в #trailerClose
 // =====================================================
 function ensureTrailerCloseIcon() {
   const btn = document.querySelector('#trailerClose');
   if (!btn) return;
 
-  // Ставим чистый, всегда видимый SVG-крестик
   btn.innerHTML = `
     <svg xmlns="http://www.w3.org/2000/svg"
          viewBox="0 0 24 24"
@@ -190,7 +189,6 @@ function ensureTrailerCloseIcon() {
     </svg>
   `;
 
-  // На всякий случай ещё раз фиксируем видимость
   const svg = btn.querySelector('svg');
   if (svg) {
     svg.style.display = 'block';
@@ -198,20 +196,17 @@ function ensureTrailerCloseIcon() {
   }
 }
 
-// Запускаем сразу и после полной загрузки DOM (на случай, если кнопка появляется позже)
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', ensureTrailerCloseIcon);
 } else {
   ensureTrailerCloseIcon();
 }
 
-// Если оверлей вставляется динамически — повторяем на клик по «watch trailer/movie»
 document.addEventListener('click', e => {
   if (
     e.target.closest('.modal__btn-trailer') ||
     e.target.closest('.modal__btn-watch-trailer')
   ) {
-    // небольшая задержка — оверлей уже в DOM
     setTimeout(ensureTrailerCloseIcon, 0);
   }
 });
