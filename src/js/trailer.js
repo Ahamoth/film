@@ -13,10 +13,15 @@ const {
 const TMDB_API_KEY = '2d95e97f255e7635245c1980eab541d3';
 
 // =====================================================
-//  WATCH MOVIE (videobalancer — оригинальная логика)
+//  WATCH MOVIE (видеобалансер — оригинальная логика)
 // =====================================================
 export async function watchTrailer(e) {
-  const trailers = await fetchTrailer(e.target.dataset.id);
+  const imdbId = await fetchImdbId(e.target.dataset.id);
+
+  if (!imdbId) {
+    alert('Видео для этого фильма недоступно.');
+    return;
+  }
 
   modal.classList.add('move-left');
   overflow.classList.add('move-left');
@@ -27,15 +32,15 @@ export async function watchTrailer(e) {
   overflow.addEventListener('click', closeTrailerOverflow);
   trailerCloseBtn.addEventListener('click', closeTrailer);
 
-  renderTrailer(trailers);
+  renderTrailer(imdbId);
 }
 
-function renderTrailer(results) {
+function renderTrailer(imdbId) {
   trailerDiv.innerHTML = `
-<iframe src="https://franko.uacdn.online/show/imdb/${results}"  width="840" height="560" frameborder="0" allowfullscreen></iframe>`;
+<iframe src="https://franko.uacdn.online/show/imdb/${imdbId}" width="840" height="560" frameborder="0" allowfullscreen></iframe>`;
 }
 
-async function fetchTrailer(id) {
+async function fetchImdbId(id) {
   try {
     const result = await axios.get(
       `https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}`
@@ -43,6 +48,7 @@ async function fetchTrailer(id) {
     return result.data.imdb_id;
   } catch (error) {
     console.log(error);
+    return null;
   }
 }
 
@@ -50,12 +56,10 @@ async function fetchTrailer(id) {
 //  WATCH TRAILER (YouTube — новая логика)
 // =====================================================
 export async function watchYoutubeTrailer(e) {
-  const btn = e.target.closest('.modal__btn-trailer') || e.target;
-  const id = btn.dataset.id;
-  const videoKey = await fetchYoutubeKey(id);
+  const videoKey = await fetchYoutubeKey(e.target.dataset.id);
 
   if (!videoKey) {
-    alert('Trailer not available for this movie.');
+    alert('Трейлер для этого фильма не найден.');
     return;
   }
 
@@ -69,7 +73,7 @@ export async function watchYoutubeTrailer(e) {
   trailerCloseBtn.addEventListener('click', closeTrailer);
 
   trailerDiv.innerHTML = `
-<iframe src="https://www.youtube.com/embed/${videoKey}?autoplay=1&rel=0"  width="840" height="560" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
+<iframe src="https://www.youtube.com/embed/${videoKey}?autoplay=1&rel=0" width="840" height="560" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
 }
 
 async function fetchYoutubeKey(id) {
@@ -89,10 +93,12 @@ async function fetchYoutubeKey(id) {
   }
 }
 
-// Обработчик новой кнопки (делегирование — не нужно править modal.js)
+// Делегирование для новой кнопки (не требует правок в modal.js)
 document.addEventListener('click', e => {
   const btn = e.target.closest('.modal__btn-trailer');
-  if (btn) watchYoutubeTrailer(e);
+  if (btn) {
+    watchYoutubeTrailer(e);
+  }
 });
 
 // =====================================================
