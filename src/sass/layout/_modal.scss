@@ -216,3 +216,15 @@
 .modal__content {
   padding: 16px;
 }
+// 🔹 Крестик модалки — поднимаем над контентом
+.modal__close-btn {
+  z-index: 15;
+  cursor: pointer;
+}
+
+// 🔹 Крестик трейлера — тоже поверх iframe
+#trailerClose {
+  z-index: 100;
+  position: relative;
+  cursor: pointer;
+}
