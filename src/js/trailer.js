@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { refs } from './refs';
 
-
 const {
   trailerOverflow,
   trailerModal,
@@ -11,9 +10,19 @@ const {
   overflow,
 } = refs;
 
+const API_KEY = '2d95e97f255e7635245c1980eab541d3'; // ключ из api-service.js
+
 export async function watchTrailer(e) {
-  const trailers = await fetchTrailer(e.target.dataset.id);
- 
+  const movieId = e.target.dataset.id;
+
+  try {
+    const videoKey = await fetchTrailer(movieId);
+    if (!videoKey) {
+      alert('Трейлер для этого фильма не найден.');
+      return;
+    }
+
+    // Показываем оверлей трейлера, сдвигая основное модальное окно
     modal.classList.add('move-left');
     overflow.classList.add('move-left');
     trailerModal.classList.remove('move-right');
@@ -23,11 +32,24 @@ export async function watchTrailer(e) {
     overflow.addEventListener('click', closeTrailerOverflow);
     trailerCloseBtn.addEventListener('click', closeTrailer);
 
-     renderTrailer(trailers);
+    renderTrailer(videoKey);
+  } catch (error) {
+    console.error('Ошибка при загрузке трейлера:', error);
+    alert('Не удалось загрузить трейлер. Попробуйте позже.');
   }
-function renderTrailer(results) {trailerDiv.innerHTML = `
-<iframe src="https://franko.uacdn.online/show/imdb/${results}"  width="840" height="560" frameborder="0" allowfullscreen></iframe>`;
+}
 
+function renderTrailer(videoKey) {
+  trailerDiv.innerHTML = `
+    <iframe
+      class="trailer-iframe"
+      src="https://www.youtube.com/embed/${videoKey}?autoplay=1&rel=0"
+      title="YouTube trailer"
+      frameborder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      allowfullscreen
+    ></iframe>
+  `;
 }
 
 function closeTrailerOverflow(e) {
@@ -56,13 +78,15 @@ function stopVideo() {
   trailerModal.removeEventListener('transitionend', stopVideo);
 }
 
-async function fetchTrailer(id) {
-  try {
-    const result = await axios.get(
-      `https://api.themoviedb.org/3/movie/${id}?api_key=2d95e97f255e7635245c1980eab541d3`
-    );
-    return result.data.imdb_id;
-  } catch (error) {
-    console.log(error);
-  }
+async function fetchTrailer(movieId) {
+  const url = `https://api.themoviedb.org/3/movie/${movieId}/videos?api_key=${API_KEY}&language=en-US`;
+  const { data } = await axios.get(url);
+  const videos = data.results || [];
+
+  const trailer =
+    videos.find(v => v.site === 'YouTube' && v.type === 'Trailer' && v.official) ||
+    videos.find(v => v.site === 'YouTube' && v.type === 'Trailer') ||
+    videos.find(v => v.site === 'YouTube' && v.type === 'Teaser');
+
+  return trailer ? trailer.key : null;
 }
