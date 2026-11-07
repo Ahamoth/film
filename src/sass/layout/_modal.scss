@@ -209,3 +209,40 @@
   .modal__content {
     padding: 16px; // или padding-left/right: 16px; padding-top/bottom: 16px;
   }
+// ---- Кнопка трейлера ----
+.modal__btn-watch-trailer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 24px;
+  background-color: $accent-color; // оранжевый акцент проекта
+  color: #ffffff;
+  border: 1px solid $accent-color;
+  border-radius: 5px;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.33;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+
+  &:hover,
+  &:focus {
+    background-color: transparent;
+    color: $accent-color;
+  }
+
+  // На планшетах высота уже задана в существующем коде
+  @include tablet {
+    height: 44px;
+  }
+}
+
+// ---- Встроенный плеер YouTube ----
+.trailer-iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  background: #000;
+}
